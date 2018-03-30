@@ -20,6 +20,8 @@ target_sources(${PROJECT_NAME}
                PRIVATE
                ${CMAKE_SOURCE_DIR}/src/main.cpp
                ${CMAKE_SOURCE_DIR}/src/gl_core4_5.cpp
+               ${CMAKE_SOURCE_DIR}/src/flock.h
+               ${CMAKE_SOURCE_DIR}/src/flock.cpp
                ${CMAKE_SOURCE_DIR}/include/gl_core4_5.hpp
                )
 
