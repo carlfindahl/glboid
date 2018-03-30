@@ -4,6 +4,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include "gl_core4_5.hpp"
 #include "GLFW/glfw3.h"
 
@@ -54,7 +56,7 @@ const bool init()
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
     // Create Window
-    g_window = glfwCreateWindow(1000, 500, "Flocking GL", nullptr, nullptr);
+    g_window = glfwCreateWindow(400, 400, "Flocking GL", nullptr, nullptr);
     if (!g_window)
     {
         std::cout << "Failed to create window!\n";
@@ -88,13 +90,16 @@ void makeShader()
 
     const char* vertSrc =
 R"(#version 450 core
-    layout(location=0) in vec4 aInstance_Position;
-    layout(location=1) in vec4 aPosition;
 
-    void main()
-    {
-            gl_Position = (aPosition); // + aInstance_Position);
-    })";
+layout (location=0) in vec4 aInstance_Position;
+layout (location=1) in vec4 aPosition;
+
+uniform mat4 projectionMatrix;
+
+void main()
+{
+        gl_Position = projectionMatrix * (aPosition + aInstance_Position);
+})";
     int vertLen = strlen(vertSrc);
 
     const char* fragSrc =
@@ -114,10 +119,20 @@ R"(#version 450 core
     gl::CompileShader(vert);
     gl::CompileShader(frag);
 
+    int didCompile;
+     gl::GetShaderiv(vert, gl::COMPILE_STATUS, &didCompile);
+    if(!didCompile) std::cout << "Failed Vertex!\n";
+     gl::GetShaderiv(frag, gl::COMPILE_STATUS, &didCompile);
+    if(!didCompile) std::cout << "Failed Fragment!\n";
+
+
     shaderProgram = gl::CreateProgram();
     gl::AttachShader(shaderProgram, vert);
     gl::AttachShader(shaderProgram, frag);
     gl::LinkProgram(shaderProgram);
+
+    gl::GetProgramiv(shaderProgram, gl::LINK_STATUS, &didCompile);
+    if(!didCompile) std::cout << "Failed Link!\n";
 
     gl::DeleteShader(vert);
     gl::DeleteShader(frag);
@@ -125,6 +140,7 @@ R"(#version 450 core
 
 void terminate()
 {
+    gl::DeleteProgram(shaderProgram);
     glfwDestroyWindow(g_window);
     glfwTerminate();
 }
@@ -155,7 +171,12 @@ int main()
     }
 
     makeShader();
+
     gl::UseProgram(shaderProgram);
+    const auto pmat = glm::ortho(0.f, 400.f, 400.f, 0.f);
+    auto loc = gl::GetUniformLocation(shaderProgram, "projectionMatrix");
+    gl::UniformMatrix4fv(loc, 1, gl::FALSE_, glm::value_ptr(pmat));
+
     g_flock.createDrawData();
 
     while (!glfwWindowShouldClose(g_window))
