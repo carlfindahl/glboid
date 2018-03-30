@@ -13,7 +13,7 @@
 GLFWwindow* g_window = nullptr;
 
 // The flock object
-Flock g_flock(300);
+Flock g_flock(666);
 
 // For GL Debug
 unsigned unusedID = 0;
@@ -99,9 +99,12 @@ layout (location=2) in mat4 aInstance_Rotation;
 
 uniform mat4 projectionMatrix;
 
+out vec4 vs_color;
+
 void main()
 {
         gl_Position = projectionMatrix * ((aInstance_Rotation * aPosition) + aInstance_Position);
+        vs_color = normalize(aInstance_Position) + vec4(0.f, 0.f, 0.5f, 0.f);
 })";
     int vertLen = strlen(vertSrc);
 
@@ -110,9 +113,11 @@ void main()
 
     layout(location=0) out vec4 color;
 
+    in vec4 vs_color;
+
     void main()
     {
-            color = vec4(1.f, 1.f, 1.f, 1.f);
+            color = vec4(vs_color.rgb, 1.f);
     }
 )";
     int fragLen = strlen(fragSrc);
