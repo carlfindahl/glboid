@@ -10,7 +10,7 @@
 GLFWwindow* g_window = nullptr;
 
 // The flock object
-Flock g_flock;
+Flock g_flock(250);
 
 void glfwErrorCallback(int err, const char* msg)
 {

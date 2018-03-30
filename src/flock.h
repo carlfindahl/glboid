@@ -15,7 +15,7 @@ private:
     std::vector<glm::vec2> m_velocities;
 
 public:
-    Flock();
+    Flock(const std::size_t count);
 
     // Update the flock
     void update(const float dt);
