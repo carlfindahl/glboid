@@ -24,7 +24,7 @@ private:
     unsigned m_vao;
 
     // Vertex buffer for boids and for the triangle
-    unsigned m_vbo, m_tvbo, m_rvbo;
+    unsigned m_vbo, m_tvbo, m_rvbo, m_vvbo;
 
 public:
     Flock(const std::size_t count);

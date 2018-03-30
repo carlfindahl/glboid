@@ -43,6 +43,8 @@ Flock::~Flock()
     gl::DeleteVertexArrays(1, &m_vao);
     gl::DeleteBuffers(1, &m_vbo);
     gl::DeleteBuffers(1, &m_tvbo);
+    gl::DeleteBuffers(1, &m_vvbo);
+    gl::DeleteBuffers(1, &m_rvbo);
 }
 
 void Flock::createDrawData()
@@ -55,6 +57,11 @@ void Flock::createDrawData()
     // Per Instance Rotation Buffer
     gl::CreateBuffers(1, &m_rvbo);
     gl::NamedBufferStorage(m_rvbo, sizeof(glm::mat4) * m_count, m_rotations.data(),
+                           gl::DYNAMIC_STORAGE_BIT);
+
+    // Per Instance Velocity Buffer
+    gl::CreateBuffers(1, &m_vvbo);
+    gl::NamedBufferStorage(m_vvbo, sizeof(glm::vec2) * m_count, m_velocities.data(),
                            gl::DYNAMIC_STORAGE_BIT);
 
     // Triangle Buffer
@@ -95,6 +102,14 @@ void Flock::createDrawData()
     gl::EnableVertexArrayAttrib(m_vao, 3);
     gl::EnableVertexArrayAttrib(m_vao, 4);
     gl::EnableVertexArrayAttrib(m_vao, 5);
+
+    // Attrib 6, Binding 3 - Velocities
+    gl::VertexArrayVertexBuffer(m_vao, 3, m_vvbo, 0, sizeof(glm::vec2));
+    gl::VertexArrayAttribFormat(m_vao, 6, 2, gl::FLOAT, gl::FALSE_, 0);
+    gl::VertexArrayAttribBinding(m_vao, 6, 3);
+    gl::VertexArrayBindingDivisor(m_vao, 3, 1);
+    gl::EnableVertexArrayAttrib(m_vao, 6);
+
 }
 
 void Flock::update(const float dt)
@@ -147,6 +162,7 @@ void Flock::update(const float dt)
                                      glm::vec3(0.f, 0.f, 1.f));
     }
 
+    gl::NamedBufferSubData(m_vvbo, 0, sizeof(glm::vec2) * m_count, m_velocities.data());
     gl::NamedBufferSubData(m_vbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());
     gl::NamedBufferSubData(m_rvbo, 0, sizeof(glm::mat4) * m_count, m_rotations.data());
 }

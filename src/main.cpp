@@ -91,35 +91,38 @@ void makeShader()
     frag = gl::CreateShader(gl::FRAGMENT_SHADER);
 
     const char* vertSrc =
-        R"(#version 450 core
+R"(#version 450 core
 
 layout (location=0) in vec4 aInstance_Position;
 layout (location=1) in vec4 aPosition;
 layout (location=2) in mat4 aInstance_Rotation;
+layout (location=6) in vec4 aInstance_Velocity;
 
 uniform mat4 projectionMatrix;
 
 out vec4 vs_color;
 
+const vec4 color_min = vec4(0.f, 1.f, .0f, 1.f);
+const vec4 color_max = vec4(1.f, 0.f, .0f, 1.f);
+
 void main()
 {
         gl_Position = projectionMatrix * ((aInstance_Rotation * aPosition) + aInstance_Position);
-        vs_color = normalize(aInstance_Position) + vec4(0.f, 0.f, 0.5f, 0.f);
+        vs_color = smoothstep(color_min, color_max, vec4(length(aInstance_Velocity) / 10.f));
 })";
     int vertLen = strlen(vertSrc);
 
     const char* fragSrc =
-        R"(#version 450 core
+R"(#version 450 core
 
-    layout(location=0) out vec4 color;
+layout(location=0) out vec4 color;
 
-    in vec4 vs_color;
+in vec4 vs_color;
 
-    void main()
-    {
-            color = vec4(vs_color.rgb, 1.f);
-    }
-)";
+void main()
+{
+        color = vec4(vs_color.rgb, 1.f);
+})";
     int fragLen = strlen(fragSrc);
 
     gl::ShaderSource(vert, 1, &vertSrc, &vertLen);
