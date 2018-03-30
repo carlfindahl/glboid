@@ -2,7 +2,9 @@
 
 #include <random>
 
-Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count)
+#include "gl_core4_5.hpp"
+
+Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count), m_count(count)
 {
     std::random_device seed;
     std::mt19937 generator(seed());
@@ -21,8 +23,29 @@ Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count)
         v.x = rng(generator) * 20.f;
         v.y = rng(generator) * 20.f;
     }
+
+    createDrawData();
+}
+
+Flock::~Flock()
+{
+    gl::DeleteBuffers(1, &m_vbo);
+    gl::DeleteVertexArrays(1, &m_vao);
+}
+
+void Flock::createDrawData()
+{
+    gl::CreateBuffers(1, &m_vbo);
+    gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(), 0);
+
+    gl::CreateVertexArrays(1, &m_vao);
+    gl::VertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec2));
+    gl::VertexArrayAttribBinding(m_vao, 0, 0);
+    gl::VertexArrayAttribFormat(m_vao, 0, 2, gl::FLOAT, gl::FALSE_, 0);
 }
 
 void Flock::update(const float dt) {}
 
-void Flock::draw() {}
+void Flock::draw() {
+
+}

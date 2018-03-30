@@ -14,8 +14,22 @@ private:
     // Velocities
     std::vector<glm::vec2> m_velocities;
 
+    // Number of boids
+    unsigned m_count;
+
+    // Vertex array for boids
+    unsigned m_vao;
+
+    // Vertex buffer for boids
+    unsigned m_vbo;
+
+    // Create GL Draw data
+    void createDrawData();
+
 public:
     Flock(const std::size_t count);
+
+    ~Flock();
 
     // Update the flock
     void update(const float dt);
