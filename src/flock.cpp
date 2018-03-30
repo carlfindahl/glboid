@@ -1,17 +1,18 @@
 #include "flock.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <random>
-#include <cmath>
 
-#include "glm/gtc/matrix_transform.hpp"
 #include "gl_core4_5.hpp"
 #include "GLFW/glfw3.h"
+#include "glm/gtc/matrix_transform.hpp"
 
 extern GLFWwindow* g_window;
 
-Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count), m_rotations(count), m_count(count)
+Flock::Flock(const std::size_t count)
+    : m_positions(count), m_velocities(count), m_rotations(count), m_count(count)
 {
     std::random_device seed;
     std::mt19937 generator(seed());
@@ -31,7 +32,8 @@ Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count),
         v.y = rng(generator) * 0.4f;
     }
 
-    for(auto& r : m_rotations){
+    for (auto& r : m_rotations)
+    {
         r = glm::mat4(1.f);
     }
 }
@@ -57,7 +59,7 @@ void Flock::createDrawData()
 
     // Triangle Buffer
     gl::CreateBuffers(1, &m_tvbo);
-    float data[6] = {4.f, 4.f, 4.f, -4.f, -6.f, 0.f};
+    float data[6] = {-4.f, -4.f, -4.f, 4.f, 6.f, 0.f};
     gl::NamedBufferStorage(m_tvbo, sizeof(data), data, 0);
 
     gl::CreateVertexArrays(1, &m_vao);
@@ -103,7 +105,7 @@ void Flock::update(const float dt)
     for (int i = 0; i != m_count; ++i)
     {
         glm::vec2 v1, v2, v3, v4;
-        v4 = (m_positions[i] - glm::vec2(static_cast<float>(x), static_cast<float>(y))) * 0.05f;
+        v4 = (glm::vec2(static_cast<float>(x), static_cast<float>(y)) - m_positions[i]) * 0.005f;
 
         std::vector<std::size_t> neighbours;
 
@@ -124,7 +126,7 @@ void Flock::update(const float dt)
             // Avoidance
             if (glm::length(m_positions[j] - m_positions[i]) < 6.f)
             {
-                v3 += (m_positions[j] - m_positions[i]);
+                v3 = v3 - (m_positions[i] - m_positions[j]);
             }
         }
 
@@ -132,16 +134,17 @@ void Flock::update(const float dt)
         v1 = (v1 - m_positions[i]) * 0.01f;
 
         v2 *= 1.f / neighbours.size();
-        v2 = (v2 - m_velocities[i]) * 0.12f;
+        v2 = (v2 - m_velocities[i]) * 0.125f;
 
         m_velocities[i] += (v1 + v2 + v3 + v4);
-        if (glm::length(m_velocities[i]) > 100.f)
+        if (glm::length(m_velocities[i]) > 10.f)
         {
-            m_velocities[i] = glm::normalize(m_velocities[i]) * 100.f;
+            m_velocities[i] = glm::normalize(m_velocities[i]) * 10.f;
         }
-        m_positions[i] += m_velocities[i] * dt;
+        m_positions[i] += m_velocities[i];
 
-        m_rotations[i] = glm::rotate(glm::mat4(1.f), std::atan2(m_velocities[i].y, m_velocities[i].x), glm::vec3(0.f, 0.f, 1.f));
+        m_rotations[i] = glm::rotate(glm::mat4(1.f), std::atan2(m_velocities[i].y, m_velocities[i].x),
+                                     glm::vec3(0.f, 0.f, 1.f));
     }
 
     gl::NamedBufferSubData(m_vbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());

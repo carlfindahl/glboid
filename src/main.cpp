@@ -4,16 +4,16 @@
 #include <cstring>
 #include <iostream>
 
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include "gl_core4_5.hpp"
 #include "GLFW/glfw3.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 // Global Window Instance
 GLFWwindow* g_window = nullptr;
 
 // The flock object
-Flock g_flock(30);
+Flock g_flock(300);
 
 // For GL Debug
 unsigned unusedID = 0;
@@ -91,7 +91,7 @@ void makeShader()
     frag = gl::CreateShader(gl::FRAGMENT_SHADER);
 
     const char* vertSrc =
-R"(#version 450 core
+        R"(#version 450 core
 
 layout (location=0) in vec4 aInstance_Position;
 layout (location=1) in vec4 aPosition;
@@ -106,7 +106,7 @@ void main()
     int vertLen = strlen(vertSrc);
 
     const char* fragSrc =
-R"(#version 450 core
+        R"(#version 450 core
 
     layout(location=0) out vec4 color;
 
@@ -123,11 +123,12 @@ R"(#version 450 core
     gl::CompileShader(frag);
 
     int didCompile;
-     gl::GetShaderiv(vert, gl::COMPILE_STATUS, &didCompile);
-    if(!didCompile) std::cout << "Failed Vertex!\n";
-     gl::GetShaderiv(frag, gl::COMPILE_STATUS, &didCompile);
-    if(!didCompile) std::cout << "Failed Fragment!\n";
-
+    gl::GetShaderiv(vert, gl::COMPILE_STATUS, &didCompile);
+    if (!didCompile)
+        std::cout << "Failed Vertex!\n";
+    gl::GetShaderiv(frag, gl::COMPILE_STATUS, &didCompile);
+    if (!didCompile)
+        std::cout << "Failed Fragment!\n";
 
     shaderProgram = gl::CreateProgram();
     gl::AttachShader(shaderProgram, vert);
@@ -135,7 +136,8 @@ R"(#version 450 core
     gl::LinkProgram(shaderProgram);
 
     gl::GetProgramiv(shaderProgram, gl::LINK_STATUS, &didCompile);
-    if(!didCompile) std::cout << "Failed Link!\n";
+    if (!didCompile)
+        std::cout << "Failed Link!\n";
 
     gl::DeleteShader(vert);
     gl::DeleteShader(frag);
@@ -152,11 +154,12 @@ void update()
 {
     static auto lastUpdate = std::chrono::steady_clock::now();
     const auto now = std::chrono::steady_clock::now();
-    const auto delta = std::chrono::duration<float>(lastUpdate - now).count();
 
-    g_flock.update(delta);
-
-    lastUpdate = now;
+    if ((now - lastUpdate) > std::chrono::duration<float>(1.f / 120.f))
+    {
+        g_flock.update(1.f / 60.f);
+        lastUpdate = now;
+    }
 }
 
 void draw()
