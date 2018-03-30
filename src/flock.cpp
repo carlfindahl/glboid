@@ -1,9 +1,13 @@
 #include "flock.h"
 
-#include <random>
+#include <algorithm>
 #include <iostream>
+#include <random>
 
 #include "gl_core4_5.hpp"
+#include "GLFW/glfw3.h"
+
+extern GLFWwindow* g_window;
 
 Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count), m_count(count)
 {
@@ -14,15 +18,15 @@ Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count),
     // Initialize Positions
     for (auto& p : m_positions)
     {
-        p.x = rng(generator) * 400.f;
-        p.y = rng(generator) * 400.f;
+        p.x = rng(generator) * 800.f;
+        p.y = rng(generator) * 800.f;
     }
 
     // Initialize Velocities
     for (auto& v : m_velocities)
     {
-        v.x = rng(generator) * 20.f;
-        v.y = rng(generator) * 20.f;
+        v.x = rng(generator) * 0.4f;
+        v.y = rng(generator) * 0.4f;
     }
 }
 
@@ -37,11 +41,12 @@ void Flock::createDrawData()
 {
     // Per Instance Position Buffer
     gl::CreateBuffers(1, &m_vbo);
-    gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(), 0);
+    gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(),
+                           gl::DYNAMIC_STORAGE_BIT);
 
     // Triangle Buffer
     gl::CreateBuffers(1, &m_tvbo);
-    float data[6] = { -4.f, -4.f, 4.f, -4.f, 0.f, 4.f };
+    float data[6] = {-4.f, -4.f, 4.f, -4.f, 0.f, 6.f};
     gl::NamedBufferStorage(m_tvbo, sizeof(data), data, 0);
 
     gl::CreateVertexArrays(1, &m_vao);
@@ -60,8 +65,53 @@ void Flock::createDrawData()
     gl::EnableVertexArrayAttrib(m_vao, 1);
 }
 
-void Flock::update(const float dt) {
+void Flock::update(const float dt)
+{
+    double x, y;
+    glfwGetCursorPos(g_window, &x, &y);
 
+    for (int i = 0; i != m_count; ++i)
+    {
+        glm::vec2 v1, v2, v3, v4;
+        v4 = (m_positions[i] - glm::vec2(static_cast<float>(x), static_cast<float>(y))) * 0.05f;
+
+        std::vector<std::size_t> neighbours;
+
+        for (int j = 0; j != m_count; ++j)
+        {
+            if (j != i && glm::length(m_positions[j] - m_positions[i]) < 80.f)
+            {
+                neighbours.push_back(j);
+            }
+        }
+
+        for (auto& j : neighbours)
+        {
+            // Cohesion
+            v1 += m_positions[j];
+            v2 += m_velocities[j];
+
+            // Avoidance
+            if (glm::length(m_positions[j] - m_positions[i]) < 6.f)
+            {
+                v3 += (m_positions[j] - m_positions[i]);
+            }
+        }
+
+        v1 *= 1.f / neighbours.size();
+        v1 = (v1 - m_positions[i]) * 0.01f;
+
+        v2 *= 1.f / neighbours.size();
+        v2 = (v2 - m_velocities[i]) * 0.12f;
+
+        m_velocities[i] += (v1 + v2 + v3 + v4);
+        if (glm::length(m_velocities[i]) > 100.f)
+        {
+            m_velocities[i] = glm::normalize(m_velocities[i]) * 100.f;
+        }
+        m_positions[i] += m_velocities[i] * dt;
+    }
+    gl::NamedBufferSubData(m_vbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());
 }
 
 void Flock::draw()

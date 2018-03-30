@@ -13,7 +13,7 @@
 GLFWwindow* g_window = nullptr;
 
 // The flock object
-Flock g_flock(250);
+Flock g_flock(30);
 
 // For GL Debug
 unsigned unusedID = 0;
@@ -54,15 +54,17 @@ const bool init()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 
     // Create Window
-    g_window = glfwCreateWindow(400, 400, "Flocking GL", nullptr, nullptr);
+    g_window = glfwCreateWindow(800, 800, "Flocking GL", nullptr, nullptr);
     if (!g_window)
     {
         std::cout << "Failed to create window!\n";
         return false;
     }
     glfwMakeContextCurrent(g_window);
+    glfwSwapInterval(1);
 
     // Load GL Functions with glLoadGen
     if (auto didLoad = gl::sys::LoadFunctions(); !didLoad)
