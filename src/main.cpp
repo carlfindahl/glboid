@@ -95,12 +95,13 @@ R"(#version 450 core
 
 layout (location=0) in vec4 aInstance_Position;
 layout (location=1) in vec4 aPosition;
+layout (location=2) in mat4 aInstance_Rotation;
 
 uniform mat4 projectionMatrix;
 
 void main()
 {
-        gl_Position = projectionMatrix * (aPosition + aInstance_Position);
+        gl_Position = projectionMatrix * ((aInstance_Rotation * aPosition) + aInstance_Position);
 })";
     int vertLen = strlen(vertSrc);
 

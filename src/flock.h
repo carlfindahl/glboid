@@ -14,6 +14,9 @@ private:
     // Velocities
     std::vector<glm::vec2> m_velocities;
 
+    // Rotation Matrices
+    std::vector<glm::mat4> m_rotations;
+
     // Number of boids
     unsigned m_count;
 
@@ -21,7 +24,7 @@ private:
     unsigned m_vao;
 
     // Vertex buffer for boids and for the triangle
-    unsigned m_vbo, m_tvbo;
+    unsigned m_vbo, m_tvbo, m_rvbo;
 
 public:
     Flock(const std::size_t count);

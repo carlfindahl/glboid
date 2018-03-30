@@ -3,13 +3,15 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <cmath>
 
+#include "glm/gtc/matrix_transform.hpp"
 #include "gl_core4_5.hpp"
 #include "GLFW/glfw3.h"
 
 extern GLFWwindow* g_window;
 
-Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count), m_count(count)
+Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count), m_rotations(count), m_count(count)
 {
     std::random_device seed;
     std::mt19937 generator(seed());
@@ -28,6 +30,10 @@ Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count),
         v.x = rng(generator) * 0.4f;
         v.y = rng(generator) * 0.4f;
     }
+
+    for(auto& r : m_rotations){
+        r = glm::mat4(1.f);
+    }
 }
 
 Flock::~Flock()
@@ -44,9 +50,14 @@ void Flock::createDrawData()
     gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(),
                            gl::DYNAMIC_STORAGE_BIT);
 
+    // Per Instance Rotation Buffer
+    gl::CreateBuffers(1, &m_rvbo);
+    gl::NamedBufferStorage(m_rvbo, sizeof(glm::mat4) * m_count, m_rotations.data(),
+                           gl::DYNAMIC_STORAGE_BIT);
+
     // Triangle Buffer
     gl::CreateBuffers(1, &m_tvbo);
-    float data[6] = {-4.f, -4.f, 4.f, -4.f, 0.f, 6.f};
+    float data[6] = {4.f, 4.f, 4.f, -4.f, -6.f, 0.f};
     gl::NamedBufferStorage(m_tvbo, sizeof(data), data, 0);
 
     gl::CreateVertexArrays(1, &m_vao);
@@ -63,6 +74,25 @@ void Flock::createDrawData()
     gl::VertexArrayAttribFormat(m_vao, 1, 2, gl::FLOAT, gl::FALSE_, 0);
     gl::VertexArrayAttribBinding(m_vao, 1, 1);
     gl::EnableVertexArrayAttrib(m_vao, 1);
+
+    // Attrib 2-5, Binding 2 - Rotations
+    gl::VertexArrayVertexBuffer(m_vao, 2, m_rvbo, 0, sizeof(glm::mat4));
+    gl::VertexArrayAttribFormat(m_vao, 2, 4, gl::FLOAT, gl::FALSE_, 0);
+    gl::VertexArrayAttribFormat(m_vao, 3, 4, gl::FLOAT, gl::FALSE_, 16);
+    gl::VertexArrayAttribFormat(m_vao, 4, 4, gl::FLOAT, gl::FALSE_, 32);
+    gl::VertexArrayAttribFormat(m_vao, 5, 4, gl::FLOAT, gl::FALSE_, 48);
+    gl::VertexArrayAttribBinding(m_vao, 2, 2);
+    gl::VertexArrayAttribBinding(m_vao, 3, 2);
+    gl::VertexArrayAttribBinding(m_vao, 4, 2);
+    gl::VertexArrayAttribBinding(m_vao, 5, 2);
+    gl::VertexArrayBindingDivisor(m_vao, 2, 1);
+    gl::VertexArrayBindingDivisor(m_vao, 3, 1);
+    gl::VertexArrayBindingDivisor(m_vao, 4, 1);
+    gl::VertexArrayBindingDivisor(m_vao, 5, 1);
+    gl::EnableVertexArrayAttrib(m_vao, 2);
+    gl::EnableVertexArrayAttrib(m_vao, 3);
+    gl::EnableVertexArrayAttrib(m_vao, 4);
+    gl::EnableVertexArrayAttrib(m_vao, 5);
 }
 
 void Flock::update(const float dt)
@@ -110,8 +140,12 @@ void Flock::update(const float dt)
             m_velocities[i] = glm::normalize(m_velocities[i]) * 100.f;
         }
         m_positions[i] += m_velocities[i] * dt;
+
+        m_rotations[i] = glm::rotate(glm::mat4(1.f), std::atan2(m_velocities[i].y, m_velocities[i].x), glm::vec3(0.f, 0.f, 1.f));
     }
+
     gl::NamedBufferSubData(m_vbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());
+    gl::NamedBufferSubData(m_rvbo, 0, sizeof(glm::mat4) * m_count, m_rotations.data());
 }
 
 void Flock::draw()
