@@ -23,29 +23,44 @@ Flock::Flock(const std::size_t count) : m_positions(count), m_velocities(count),
         v.x = rng(generator) * 20.f;
         v.y = rng(generator) * 20.f;
     }
-
-    createDrawData();
 }
 
 Flock::~Flock()
 {
-    gl::DeleteBuffers(1, &m_vbo);
     gl::DeleteVertexArrays(1, &m_vao);
+    gl::DeleteBuffers(1, &m_vbo);
+    gl::DeleteBuffers(1, &m_tvbo);
 }
 
 void Flock::createDrawData()
 {
+    // Per Instance Position Buffer
     gl::CreateBuffers(1, &m_vbo);
     gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(), 0);
 
+    // Triangle Buffer
+    gl::CreateBuffers(1, &m_tvbo);
+    float data[6] = { -.5f, -.5f, .5f, -.5f, 0.f, .5f };
+    gl::NamedBufferStorage(m_tvbo, 6 * sizeof(float), data, 0);
+
     gl::CreateVertexArrays(1, &m_vao);
+
+    // Attrib 0, Binding 0 - Per Instance Position
     gl::VertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec2));
     gl::VertexArrayAttribBinding(m_vao, 0, 0);
     gl::VertexArrayAttribFormat(m_vao, 0, 2, gl::FLOAT, gl::FALSE_, 0);
+    gl::VertexArrayBindingDivisor(m_vao, 0, 1);
+
+    // Attrib 1, Binding 1 - The Triangle
+    gl::VertexArrayVertexBuffer(m_vao, 1, m_tvbo, 0, sizeof(float) * 2);
+    gl::VertexArrayAttribFormat(m_vao, 1, 2, gl::FLOAT, gl::FALSE_, 0);
+    gl::VertexArrayAttribBinding(m_vao, 1, 1);
 }
 
 void Flock::update(const float dt) {}
 
-void Flock::draw() {
-
+void Flock::draw()
+{
+    gl::BindVertexArray(m_vao);
+    gl::DrawArrays(gl::TRIANGLES, 0, 3);
 }

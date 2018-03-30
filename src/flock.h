@@ -20,16 +20,16 @@ private:
     // Vertex array for boids
     unsigned m_vao;
 
-    // Vertex buffer for boids
-    unsigned m_vbo;
-
-    // Create GL Draw data
-    void createDrawData();
+    // Vertex buffer for boids and for the triangle
+    unsigned m_vbo, m_tvbo;
 
 public:
     Flock(const std::size_t count);
 
     ~Flock();
+
+    // Create GL Draw data
+    void createDrawData();
 
     // Update the flock
     void update(const float dt);
