@@ -1,6 +1,7 @@
 #include "flock.h"
 
 #include <chrono>
+#include <cstring>
 #include <iostream>
 
 #include "gl_core4_5.hpp"
@@ -32,6 +33,8 @@ void APIENTRY cppGLDebug(GLenum source, GLenum type, GLuint id, GLenum severity,
     default: std::cout << "UKN: " << message << '\n'; break;
     }
 }
+
+unsigned shaderProgram;
 
 const bool init()
 {
@@ -76,6 +79,50 @@ const bool init()
     return true;
 }
 
+void makeShader()
+{
+    unsigned vert, frag;
+
+    vert = gl::CreateShader(gl::VERTEX_SHADER);
+    frag = gl::CreateShader(gl::FRAGMENT_SHADER);
+
+    const char* vertSrc =
+R"(#version 450 core
+    layout(location=0) in vec4 aInstance_Position;
+    layout(location=1) in vec4 aPosition;
+
+    void main()
+    {
+            gl_Position = (aPosition); // + aInstance_Position);
+    })";
+    int vertLen = strlen(vertSrc);
+
+    const char* fragSrc =
+R"(#version 450 core
+
+    layout(location=0) out vec4 color;
+
+    void main()
+    {
+            color = vec4(1.f, 1.f, 1.f, 1.f);
+    }
+)";
+    int fragLen = strlen(fragSrc);
+
+    gl::ShaderSource(vert, 1, &vertSrc, &vertLen);
+    gl::ShaderSource(frag, 1, &fragSrc, &fragLen);
+    gl::CompileShader(vert);
+    gl::CompileShader(frag);
+
+    shaderProgram = gl::CreateProgram();
+    gl::AttachShader(shaderProgram, vert);
+    gl::AttachShader(shaderProgram, frag);
+    gl::LinkProgram(shaderProgram);
+
+    gl::DeleteShader(vert);
+    gl::DeleteShader(frag);
+}
+
 void terminate()
 {
     glfwDestroyWindow(g_window);
@@ -107,6 +154,8 @@ int main()
         return 1;
     }
 
+    makeShader();
+    gl::UseProgram(shaderProgram);
     g_flock.createDrawData();
 
     while (!glfwWindowShouldClose(g_window))
