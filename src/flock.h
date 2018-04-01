@@ -20,15 +20,27 @@ private:
     // Number of boids
     unsigned m_count;
 
-    // Vertex array for boids
+    // Vertex array for boid drawing
     unsigned m_vao;
 
-    // Vertex buffer for boids and for the triangle
-    unsigned m_vbo, m_tvbo, m_rvbo, m_vvbo;
+    // Vertex Buffer Objects
+    // pvbo - Position Buffer Object
+    // tvbo - Triangle Buffer Object
+    // rvbo - Rotation Buffer Object
+    // vvbo - Velocity Buffer Object
+    unsigned m_pvbo, m_tvbo, m_rvbo, m_vvbo;
 
 public:
+    // Flocks are constructed with count boids
     Flock(const std::size_t count);
 
+    // No copy-move ctor/assignment
+    Flock(const Flock&) = delete;
+    Flock& operator=(const Flock&) = delete;
+    Flock& operator=(Flock&&) = delete;
+    Flock(Flock&&) = delete;
+
+    // Clean up resources
     ~Flock();
 
     // Create GL Draw data
@@ -37,7 +49,7 @@ public:
     // Update the flock
     void update(const float dt);
 
-    // Do all necessary GL work to be draw the Flock
+    // Do all necessary GL work to draw the Flock
     void draw();
 };
 

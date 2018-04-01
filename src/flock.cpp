@@ -41,7 +41,7 @@ Flock::Flock(const std::size_t count)
 Flock::~Flock()
 {
     gl::DeleteVertexArrays(1, &m_vao);
-    gl::DeleteBuffers(1, &m_vbo);
+    gl::DeleteBuffers(1, &m_pvbo);
     gl::DeleteBuffers(1, &m_tvbo);
     gl::DeleteBuffers(1, &m_vvbo);
     gl::DeleteBuffers(1, &m_rvbo);
@@ -50,8 +50,8 @@ Flock::~Flock()
 void Flock::createDrawData()
 {
     // Per Instance Position Buffer
-    gl::CreateBuffers(1, &m_vbo);
-    gl::NamedBufferStorage(m_vbo, sizeof(glm::vec2) * m_count, m_positions.data(),
+    gl::CreateBuffers(1, &m_pvbo);
+    gl::NamedBufferStorage(m_pvbo, sizeof(glm::vec2) * m_count, m_positions.data(),
                            gl::DYNAMIC_STORAGE_BIT);
 
     // Per Instance Rotation Buffer
@@ -69,10 +69,11 @@ void Flock::createDrawData()
     float data[6] = {-4.f, -4.f, -4.f, 4.f, 6.f, 0.f};
     gl::NamedBufferStorage(m_tvbo, sizeof(data), data, 0);
 
+    // Vertex Array
     gl::CreateVertexArrays(1, &m_vao);
 
     // Attrib 0, Binding 0 - Per Instance Position
-    gl::VertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec2));
+    gl::VertexArrayVertexBuffer(m_vao, 0, m_pvbo, 0, sizeof(glm::vec2));
     gl::VertexArrayAttribBinding(m_vao, 0, 0);
     gl::VertexArrayAttribFormat(m_vao, 0, 2, gl::FLOAT, gl::FALSE_, 0);
     gl::VertexArrayBindingDivisor(m_vao, 0, 1);
@@ -109,7 +110,6 @@ void Flock::createDrawData()
     gl::VertexArrayAttribBinding(m_vao, 6, 3);
     gl::VertexArrayBindingDivisor(m_vao, 3, 1);
     gl::EnableVertexArrayAttrib(m_vao, 6);
-
 }
 
 void Flock::update(const float dt)
@@ -117,58 +117,79 @@ void Flock::update(const float dt)
     double x, y;
     glfwGetCursorPos(g_window, &x, &y);
 
-    for (int i = 0; i != m_count; ++i)
+    constexpr float neighbourDistance = 80.f;
+    constexpr float avoidanceDistance = 6.f;
+
+    for (unsigned i = 0; i != m_count; ++i)
     {
+        // Rule Vectors
+        // v1 - Cohesion
+        // v2 - Alignment
+        // v3 - Separation
+        // v4 - Target Location
         glm::vec2 v1, v2, v3, v4;
         v4 = (glm::vec2(static_cast<float>(x), static_cast<float>(y)) - m_positions[i]) * 0.005f;
 
+        // Identify neighbours in a 360 degree FOV
         std::vector<std::size_t> neighbours;
-
-        for (int j = 0; j != m_count; ++j)
+        for (unsigned j = 0; j != m_count; ++j)
         {
-            if (j != i && glm::length(m_positions[j] - m_positions[i]) < 80.f)
+            if (j != i && glm::length(m_positions[j] - m_positions[i]) < neighbourDistance)
             {
                 neighbours.push_back(j);
             }
         }
 
+        // For each neighbour of current Boid
         for (auto& j : neighbours)
         {
             // Cohesion
             v1 += m_positions[j];
+
+            // Alignment
             v2 += m_velocities[j];
 
             // Avoidance
-            if (glm::length(m_positions[j] - m_positions[i]) < 6.f)
+            if (glm::length(m_positions[j] - m_positions[i]) < avoidanceDistance)
             {
                 v3 = v3 - (m_positions[i] - m_positions[j]);
             }
         }
 
-        v1 *= 1.f / neighbours.size();
+        // Cohesion
+        v1 *= 1.f / neighbours.size();  // Since glm::vec2 does not support division
         v1 = (v1 - m_positions[i]) * 0.01f;
 
-        v2 *= 1.f / neighbours.size();
+        // Alignment
+        v2 *= 1.f / neighbours.size();  // Ditto
         v2 = (v2 - m_velocities[i]) * 0.125f;
 
+        // Apply velocities
         m_velocities[i] += (v1 + v2 + v3 + v4);
+
+        // Constrain top speed
         if (glm::length(m_velocities[i]) > 10.f)
         {
             m_velocities[i] = glm::normalize(m_velocities[i]) * 10.f;
         }
+
+        // Apply movement
         m_positions[i] += m_velocities[i];
 
+        // Compute orientation of boid
         m_rotations[i] = glm::rotate(glm::mat4(1.f), std::atan2(m_velocities[i].y, m_velocities[i].x),
                                      glm::vec3(0.f, 0.f, 1.f));
     }
 
+    // Fill GL Buffers with data for accurate drawing
     gl::NamedBufferSubData(m_vvbo, 0, sizeof(glm::vec2) * m_count, m_velocities.data());
-    gl::NamedBufferSubData(m_vbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());
+    gl::NamedBufferSubData(m_pvbo, 0, sizeof(glm::vec2) * m_count, m_positions.data());
     gl::NamedBufferSubData(m_rvbo, 0, sizeof(glm::mat4) * m_count, m_rotations.data());
 }
 
 void Flock::draw()
 {
+    // Bind and draw m_count number of instanced boids
     gl::BindVertexArray(m_vao);
     gl::DrawArraysInstanced(gl::TRIANGLES, 0, 3, m_count);
 }
