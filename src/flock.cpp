@@ -134,9 +134,15 @@ void Flock::update(const float dt)
         std::vector<std::size_t> neighbours;
         for (unsigned j = 0; j != m_count; ++j)
         {
-            if (j != i && glm::length(m_positions[j] - m_positions[i]) < neighbourDistance)
+            const auto diff = m_positions[j] - m_positions[i];
+            if (j != i && glm::length(diff) < neighbourDistance)
             {
-                neighbours.push_back(j);
+                const auto& v = m_velocities[i];
+                const float angle = glm::acos(glm::dot(v, diff) / (glm::length(v) * glm::length(diff)));
+                if (angle < 45.f * 3.1415f / 180.f)
+                {
+                    neighbours.push_back(j);
+                }
             }
         }
 

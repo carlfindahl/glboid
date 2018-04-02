@@ -13,7 +13,7 @@
 GLFWwindow* g_window = nullptr;
 
 // The flock object
-Flock g_flock(666);
+Flock g_flock(888);
 
 #ifndef NDEBUG
 // For GL Debug
