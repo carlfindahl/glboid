@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 
-project("Boid_GL" VERSION 0.0.1 LANGUAGES CXX)
+project("Boid_GL" VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,8 +40,3 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} OpenGL::GL)
 target_link_libraries(${PROJECT_NAME} glfw)
 target_link_libraries(${PROJECT_NAME} glm)
-
-target_include_directories(${PROJECT_NAME}
-                           PRIVATE
-                           ${GLEW_INCLUDE_DIRS}
-                           )
